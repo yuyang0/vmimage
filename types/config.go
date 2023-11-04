@@ -5,7 +5,7 @@ type DockerConfig struct {
 	Auth     string `toml:"-"` // in base64
 }
 
-type ImageHubConfig struct {
+type Config struct {
 	Type   string       `toml:"type" default:"docker"`
 	Docker DockerConfig `toml:"docker"`
 

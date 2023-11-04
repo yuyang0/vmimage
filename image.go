@@ -19,16 +19,8 @@ var (
 	m *Manager
 )
 
-func Setup(config *types.ImageHubConfig) (err error) {
-	m = &Manager{
-		cfg: config,
-	}
-	switch config.Type {
-	case dockerType:
-		err = docker.Setup(config)
-	default:
-		err = fmt.Errorf("invalid image hub type: %s", config.Type)
-	}
+func Setup(config *types.Config) (err error) {
+	m, err = NewManager(config)
 	return err
 }
 
@@ -48,7 +40,21 @@ type Image interface { //nolint:interfacebloat
 }
 
 type Manager struct {
-	cfg *types.ImageHubConfig
+	cfg *types.Config
+}
+
+func NewManager(cfg *types.Config) (mgr *Manager, err error) {
+	mgr = &Manager{
+		cfg: cfg,
+	}
+
+	switch cfg.Type {
+	case dockerType:
+		err = docker.Setup(cfg)
+	default:
+		err = fmt.Errorf("invalid image hub type: %s", cfg.Type)
+	}
+	return mgr, err
 }
 
 // Load creates object, it don't pull image

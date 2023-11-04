@@ -24,10 +24,13 @@ const (
 
 var (
 	cli *engineapi.Client
-	cfg *pkgtypes.ImageHubConfig
+	cfg *pkgtypes.Config
 )
 
-func Setup(config *pkgtypes.ImageHubConfig) (err error) {
+func Setup(config *pkgtypes.Config) (err error) {
+	if cli != nil {
+		return nil
+	}
 	cli, err = MakeDockerClient(config.Docker.Endpoint)
 	cfg = config
 	return err
