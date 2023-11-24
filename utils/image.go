@@ -54,7 +54,7 @@ func CalcDigestOfFile(fname string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("sha256:%x", h.Sum(nil)), nil
+	return fmt.Sprintf("%x", h.Sum(nil)), nil
 }
 
 // EnsureReaderClosed As the name says,
