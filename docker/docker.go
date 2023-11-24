@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/http"
 	"net/url"
 	"os"
 	"path"
@@ -85,6 +86,27 @@ func ListLocalImages(ctx context.Context, user string) ([]*Image, error) {
 	return ans, nil
 }
 
+func httpGetSHA256(u string) (string, error) {
+	if !strings.HasSuffix(u, ".img") {
+		return "", fmt.Errorf("invalid url: %s", u)
+	}
+	url := strings.TrimSuffix(u, ".img")
+	url += ".sha256sum"
+	// Perform GET request
+	response, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer response.Body.Close()
+
+	// Read the response body
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return "", err
+	}
+	return string(body), nil
+}
+
 // Prepare prepares the image for use by creating a Dockerfile and building a Docker image.
 //
 // Parameters:
@@ -96,6 +118,7 @@ func ListLocalImages(ctx context.Context, user string) ([]*Image, error) {
 func (img *Image) Prepare(fname string) (io.ReadCloser, error) {
 	baseDir := filepath.Dir(fname)
 	baseName := filepath.Base(fname)
+	digest := ""
 	tarOpts := &archive.TarOptions{
 		IncludeFiles: []string{baseName, "Dockerfile.yavirt"},
 		Compression:  archive.Uncompressed,
@@ -110,8 +133,15 @@ func (img *Image) Prepare(fname string) (io.ReadCloser, error) {
 		baseDir = tmpDir
 		baseName = fname
 		tarOpts.IncludeFiles = []string{"Dockerfile.yavirt"}
+		if digest, err = httpGetSHA256(fname); err != nil {
+			return nil, err
+		}
+	} else {
+		if digest, err = utils.CalcDigestOfFile(fname); err != nil {
+			return nil, err
+		}
 	}
-	dockerfile := fmt.Sprintf("FROM scratch\nADD %s /%s", baseName, destImgName)
+	dockerfile := fmt.Sprintf("FROM scratch\nLABEL SHA256=%s\nADD %s /%s", digest, baseName, destImgName)
 	if err := os.WriteFile(filepath.Join(baseDir, "Dockerfile.yavirt"), []byte(dockerfile), 0600); err != nil {
 		return nil, err
 	}
@@ -158,6 +188,13 @@ func (img *Image) LoadMetadata(ctx context.Context) (err error) {
 	upperDir := resp.GraphDriver.Data["UpperDir"]
 	img.localPath = filepath.Join(upperDir, destImgName)
 	img.actualSize, img.virtualSize, err = utils.ImageSize(ctx, img.localPath)
+
+	img.digest = resp.Config.Labels["SHA256"]
+	if img.digest == "" {
+		if img.digest, err = utils.CalcDigestOfFile(img.localPath); err != nil {
+			return err
+		}
+	}
 	return err
 }
 
@@ -195,13 +232,6 @@ func (img *Image) Distro() string {
 }
 
 func (img *Image) Digest() string {
-	if img.digest == "" {
-		digest, err := utils.CalcDigestOfFile(img.localPath)
-		if err != nil {
-			// log.Warnf("failed to calculate digest of %s: %s", img.Fullname(), err)
-		}
-		img.digest = digest
-	}
 	return img.digest
 }
 
