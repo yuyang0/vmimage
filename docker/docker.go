@@ -190,11 +190,6 @@ func (img *Image) LoadMetadata(ctx context.Context) (err error) {
 	img.actualSize, img.virtualSize, err = utils.ImageSize(ctx, img.localPath)
 
 	img.digest = resp.Config.Labels["SHA256"]
-	if img.digest == "" {
-		if img.digest, err = utils.CalcDigestOfFile(img.localPath); err != nil {
-			return err
-		}
-	}
 	return err
 }
 
@@ -232,6 +227,9 @@ func (img *Image) Distro() string {
 }
 
 func (img *Image) Digest() string {
+	if img.digest == "" {
+		img.digest, _ = utils.CalcDigestOfFile(img.localPath)
+	}
 	return img.digest
 }
 
