@@ -2,27 +2,8 @@ package vmimage
 
 import (
 	"context"
-	"fmt"
 	"io"
-
-	"github.com/yuyang0/vmimage/docker"
-	"github.com/yuyang0/vmimage/mocks"
-	"github.com/yuyang0/vmimage/types"
-	"github.com/yuyang0/vmimage/utils"
 )
-
-const (
-	dockerType = "docker"
-)
-
-var (
-	m *Manager
-)
-
-func Setup(config *types.Config) (err error) {
-	m, err = NewManager(config)
-	return err
-}
 
 type Image interface { //nolint:interfacebloat
 	Prepare(fname string) (io.ReadCloser, error)
@@ -39,96 +20,8 @@ type Image interface { //nolint:interfacebloat
 	Digest() string
 }
 
-type Manager struct {
-	cfg *types.Config
-}
-
-func NewManager(cfg *types.Config) (mgr *Manager, err error) {
-	mgr = &Manager{
-		cfg: cfg,
-	}
-
-	switch cfg.Type {
-	case dockerType:
-		err = docker.Setup(cfg)
-	default:
-		err = fmt.Errorf("invalid image hub type: %s", cfg.Type)
-	}
-	return mgr, err
-}
-
-// Load creates object, it don't pull image
-func (mgr *Manager) Load(imgName string) (img Image, err error) {
-	cfg := mgr.cfg
-	switch cfg.Type {
-	case dockerType:
-		img, err = docker.New(imgName)
-	default:
-		err = fmt.Errorf("invalid image hub type: %s", cfg.Type)
-	}
-	if err != nil {
-		return nil, err
-	}
-	rc, err := img.Pull(context.TODO())
-	if err != nil {
-		return nil, err
-	}
-	utils.EnsureReaderClosed(rc)
-	if err := img.LoadMetadata(context.TODO()); err != nil {
-		return nil, err
-	}
-	return img, nil
-}
-
-// ListLocalImages lists all local images
-func (mgr *Manager) ListLocalImages(ctx context.Context, user string) ([]Image, error) {
-	cfg := mgr.cfg
-	switch cfg.Type {
-	case dockerType:
-		imgs, err := docker.ListLocalImages(ctx, user)
-		if err != nil {
-			return nil, err
-		}
-		ans := make([]Image, 0, len(imgs))
-		for _, img := range imgs {
-			ans = append(ans, img)
-		}
-		return ans, nil
-	default:
-		return nil, fmt.Errorf("invalid image hub type: %s", cfg.Type)
-	}
-}
-
-func (mgr *Manager) NewImage(imgName string) (Image, error) {
-	cfg := mgr.cfg
-	switch cfg.Type {
-	case dockerType:
-		return docker.New(imgName)
-	default:
-		return nil, fmt.Errorf("invalid image hub type: %s", cfg.Type)
-	}
-}
-
-func Load(imgName string) (img Image, err error) {
-	return m.Load(imgName)
-}
-
-func ListLocalImages(ctx context.Context, user string) ([]Image, error) {
-	return m.ListLocalImages(ctx, user)
-}
-
-func NewImage(imgName string) (Image, error) {
-	return m.NewImage(imgName)
-}
-
-func NewImageName(user, name string) string {
-	imgName := fmt.Sprintf("%s/%s", user, name)
-	if user == "" {
-		imgName = name
-	}
-	return imgName
-}
-
-func NewMockImage() *mocks.Image {
-	return &mocks.Image{}
+type Manager interface {
+	ListLocalImages(ctx context.Context, user string) ([]Image, error)
+	NewImage(fullname string) (Image, error) // create image object, but don't pull
+	LoadImage(imgName string) (Image, error) // create image object and pull the image to local
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/docker/docker/api/types"
 	engineapi "github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/archive"
+	"github.com/yuyang0/vmimage"
 	pkgtypes "github.com/yuyang0/vmimage/types"
 	"github.com/yuyang0/vmimage/utils"
 )
@@ -23,23 +24,72 @@ const (
 	dockerCliVersion = "1.35"
 )
 
-var (
-	cli *engineapi.Client
+type Manager struct {
 	cfg *pkgtypes.Config
-)
-
-func Setup(config *pkgtypes.Config) (err error) {
-	if cli != nil {
-		return nil
-	}
-	cli, err = MakeDockerClient(config.Docker.Endpoint)
-	cfg = config
-	return err
+	cli *engineapi.Client
 }
 
-func MakeDockerClient(endpoint string) (*engineapi.Client, error) {
-	defaultHeaders := map[string]string{"User-Agent": "eru-yavirt"}
-	return engineapi.NewClient(endpoint, dockerCliVersion, nil, defaultHeaders)
+func NewManager(config *pkgtypes.Config) (m *Manager, err error) {
+	cli, err := makeDockerClient(config.Docker.Endpoint)
+	if err != nil {
+		return nil, err
+	}
+	m = &Manager{
+		cfg: config,
+		cli: cli,
+	}
+	return m, nil
+}
+
+func (m *Manager) ListLocalImages(ctx context.Context, user string) ([]vmimage.Image, error) {
+	images, err := m.cli.ImageList(ctx, types.ImageListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	var ans []vmimage.Image
+	prefix := path.Join(m.cfg.Prefix, user)
+	for _, dockerImg := range images {
+		for _, repoTag := range dockerImg.RepoTags {
+			if strings.HasPrefix(repoTag, prefix) {
+				fullname := strings.TrimPrefix(repoTag, prefix)
+				fullname = strings.TrimPrefix(fullname, "/")
+				fullname = strings.TrimPrefix(fullname, "library/")
+				img, _ := m.NewImage(fullname)
+				ans = append(ans, img)
+			}
+		}
+	}
+	return ans, nil
+}
+
+func (m *Manager) NewImage(fullname string) (vmimage.Image, error) {
+	user, name, tag, err := utils.NormalizeImageName(fullname)
+	if err != nil {
+		return nil, err
+	}
+	return &Image{
+		user: user,
+		name: name,
+		tag:  tag,
+
+		cfg: m.cfg,
+		cli: m.cli,
+	}, nil
+}
+
+func (m *Manager) LoadImage(imgName string) (img vmimage.Image, err error) {
+	if img, err = m.NewImage(imgName); err != nil {
+		return nil, err
+	}
+	rc, err := img.Pull(context.TODO())
+	if err != nil {
+		return nil, err
+	}
+	utils.EnsureReaderClosed(rc)
+	if err := img.LoadMetadata(context.TODO()); err != nil {
+		return nil, err
+	}
+	return img, nil
 }
 
 type Image struct {
@@ -51,60 +101,9 @@ type Image struct {
 	actualSize  int64
 	virtualSize int64
 	localPath   string
-}
 
-func New(fullname string) (*Image, error) {
-	user, name, tag, err := utils.NormalizeImageName(fullname)
-	if err != nil {
-		return nil, err
-	}
-	return &Image{
-		user: user,
-		name: name,
-		tag:  tag,
-	}, nil
-}
-
-func ListLocalImages(ctx context.Context, user string) ([]*Image, error) {
-	images, err := cli.ImageList(ctx, types.ImageListOptions{})
-	if err != nil {
-		return nil, err
-	}
-	var ans []*Image
-	prefix := path.Join(cfg.Prefix, user)
-	for _, dockerImg := range images {
-		for _, repoTag := range dockerImg.RepoTags {
-			if strings.HasPrefix(repoTag, prefix) {
-				fullname := strings.TrimPrefix(repoTag, prefix)
-				fullname = strings.TrimPrefix(fullname, "/")
-				fullname = strings.TrimPrefix(fullname, "library/")
-				img, _ := New(fullname)
-				ans = append(ans, img)
-			}
-		}
-	}
-	return ans, nil
-}
-
-func httpGetSHA256(u string) (string, error) {
-	if !strings.HasSuffix(u, ".img") {
-		return "", fmt.Errorf("invalid url: %s", u)
-	}
-	url := strings.TrimSuffix(u, ".img")
-	url += ".sha256sum"
-	// Perform GET request
-	response, err := http.Get(url)
-	if err != nil {
-		return "", err
-	}
-	defer response.Body.Close()
-
-	// Read the response body
-	body, err := io.ReadAll(response.Body)
-	if err != nil {
-		return "", err
-	}
-	return string(body), nil
+	cfg *pkgtypes.Config
+	cli *engineapi.Client
 }
 
 // Prepare prepares the image for use by creating a Dockerfile and building a Docker image.
@@ -116,6 +115,7 @@ func httpGetSHA256(u string) (string, error) {
 //   - io.ReadCloser: a ReadCloser to read the prepared image.
 //   - error: an error if any occurred during the preparation process.
 func (img *Image) Prepare(fname string) (io.ReadCloser, error) {
+	cli := img.cli
 	baseDir := filepath.Dir(fname)
 	baseName := filepath.Base(fname)
 	digest := ""
@@ -168,12 +168,14 @@ func (img *Image) Prepare(fname string) (io.ReadCloser, error) {
 }
 
 func (img *Image) Pull(ctx context.Context) (io.ReadCloser, error) {
+	cli, cfg := img.cli, img.cfg
 	return cli.ImagePull(ctx, img.dockerImageName(), types.ImagePullOptions{
 		RegistryAuth: cfg.Docker.Auth,
 	})
 }
 
 func (img *Image) Push(ctx context.Context, force bool) (io.ReadCloser, error) {
+	cli, cfg := img.cli, img.cfg
 	return cli.ImagePush(ctx, img.dockerImageName(), types.ImagePushOptions{
 		RegistryAuth: cfg.Docker.Auth,
 		All:          force,
@@ -181,6 +183,7 @@ func (img *Image) Push(ctx context.Context, force bool) (io.ReadCloser, error) {
 }
 
 func (img *Image) LoadMetadata(ctx context.Context) (err error) {
+	cli := img.cli
 	resp, _, err := cli.ImageInspectWithRaw(ctx, img.dockerImageName())
 	if err != nil {
 		return err
@@ -194,6 +197,7 @@ func (img *Image) LoadMetadata(ctx context.Context) (err error) {
 }
 
 func (img *Image) RemoveLocal(ctx context.Context) error {
+	cli := img.cli
 	_, err := cli.ImageRemove(ctx, img.dockerImageName(), types.ImageRemoveOptions{
 		Force:         true, // Remove even if the image is in use
 		PruneChildren: true, // Prune dependent child images
@@ -234,9 +238,36 @@ func (img *Image) Digest() string {
 }
 
 func (img *Image) dockerImageName() string {
+	cfg := img.cfg
 	if img.user == "" {
 		return path.Join(cfg.Prefix, "library", img.Fullname())
 	} else { //nolint
 		return path.Join(cfg.Prefix, img.Fullname())
 	}
+}
+
+func makeDockerClient(endpoint string) (*engineapi.Client, error) {
+	defaultHeaders := map[string]string{"User-Agent": "eru-yavirt"}
+	return engineapi.NewClient(endpoint, dockerCliVersion, nil, defaultHeaders)
+}
+
+func httpGetSHA256(u string) (string, error) {
+	if !strings.HasSuffix(u, ".img") {
+		return "", fmt.Errorf("invalid url: %s", u)
+	}
+	url := strings.TrimSuffix(u, ".img")
+	url += ".sha256sum"
+	// Perform GET request
+	response, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer response.Body.Close()
+
+	// Read the response body
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return "", err
+	}
+	return string(body), nil
 }
