@@ -3,6 +3,7 @@ package factory
 import (
 	"context"
 	"fmt"
+	"io"
 
 	"github.com/alphadose/haxmap"
 	"github.com/yuyang0/vmimage"
@@ -94,6 +95,38 @@ func ListLocalImages(ctx context.Context, user string) ([]*types.Image, error) {
 	return mgr.ListLocalImages(ctx, user)
 }
 
+func Pull(ctx context.Context, img *types.Image) (io.ReadCloser, error) {
+	mgr, err := GetManager()
+	if err != nil {
+		return nil, err
+	}
+	return mgr.Pull(ctx, img)
+}
+
+func Push(ctx context.Context, img *types.Image, force bool) (io.ReadCloser, error) {
+	mgr, err := GetManager()
+	if err != nil {
+		return nil, err
+	}
+	return mgr.Push(ctx, img, force)
+}
+
+func Prepare(fname string, img *types.Image) (io.ReadCloser, error) {
+	mgr, err := GetManager()
+	if err != nil {
+		return nil, err
+	}
+	return mgr.Prepare(fname, img)
+}
+
+func RemoveLocal(ctx context.Context, img *types.Image) error {
+	mgr, err := GetManager()
+	if err != nil {
+		return err
+	}
+	return mgr.RemoveLocal(ctx, img)
+}
+
 func NewImage(imgName string) (*types.Image, error) {
 	return types.NewImage(imgName)
 }
@@ -104,4 +137,9 @@ func NewImageName(user, name string) string {
 		imgName = name
 	}
 	return imgName
+}
+
+func GetMockManager() *mocks.Manager {
+	mgr, _ := GetManager(mockType)
+	return mgr.(*mocks.Manager)
 }
