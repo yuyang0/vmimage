@@ -46,9 +46,9 @@ func (_m *Manager) ListLocalImages(ctx context.Context, user string) ([]*types.I
 	return r0, r1
 }
 
-// LoadImage provides a mock function with given fields: imgName
-func (_m *Manager) LoadImage(imgName string) (*types.Image, error) {
-	ret := _m.Called(imgName)
+// LoadImage provides a mock function with given fields: ctx, imgName
+func (_m *Manager) LoadImage(ctx context.Context, imgName string) (*types.Image, error) {
+	ret := _m.Called(ctx, imgName)
 
 	if len(ret) == 0 {
 		panic("no return value specified for LoadImage")
@@ -56,67 +56,19 @@ func (_m *Manager) LoadImage(imgName string) (*types.Image, error) {
 
 	var r0 *types.Image
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string) (*types.Image, error)); ok {
-		return rf(imgName)
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*types.Image, error)); ok {
+		return rf(ctx, imgName)
 	}
-	if rf, ok := ret.Get(0).(func(string) *types.Image); ok {
-		r0 = rf(imgName)
+	if rf, ok := ret.Get(0).(func(context.Context, string) *types.Image); ok {
+		r0 = rf(ctx, imgName)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*types.Image)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(imgName)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// LoadMetadata provides a mock function with given fields: ctx, img
-func (_m *Manager) LoadMetadata(ctx context.Context, img *types.Image) error {
-	ret := _m.Called(ctx, img)
-
-	if len(ret) == 0 {
-		panic("no return value specified for LoadMetadata")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *types.Image) error); ok {
-		r0 = rf(ctx, img)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// NewImage provides a mock function with given fields: fullname
-func (_m *Manager) NewImage(fullname string) (*types.Image, error) {
-	ret := _m.Called(fullname)
-
-	if len(ret) == 0 {
-		panic("no return value specified for NewImage")
-	}
-
-	var r0 *types.Image
-	var r1 error
-	if rf, ok := ret.Get(0).(func(string) (*types.Image, error)); ok {
-		return rf(fullname)
-	}
-	if rf, ok := ret.Get(0).(func(string) *types.Image); ok {
-		r0 = rf(fullname)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*types.Image)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(fullname)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, imgName)
 	} else {
 		r1 = ret.Error(1)
 	}

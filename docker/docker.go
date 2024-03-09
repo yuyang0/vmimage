@@ -61,16 +61,16 @@ func (m *Manager) ListLocalImages(ctx context.Context, user string) ([]*pkgtypes
 	return ans, nil
 }
 
-func (m *Manager) LoadImage(imgName string) (img *pkgtypes.Image, err error) {
+func (m *Manager) LoadImage(ctx context.Context, imgName string) (img *pkgtypes.Image, err error) {
 	if img, err = pkgtypes.NewImage(imgName); err != nil {
 		return nil, err
 	}
-	rc, err := m.Pull(context.TODO(), img)
+	rc, err := m.Pull(ctx, img)
 	if err != nil {
 		return nil, err
 	}
 	utils.EnsureReaderClosed(rc)
-	if err := m.loadMetadata(context.TODO(), img); err != nil {
+	if err := m.loadMetadata(ctx, img); err != nil {
 		return nil, err
 	}
 	return img, nil

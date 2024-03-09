@@ -79,12 +79,12 @@ func GetManager(tys ...string) (vmimage.Manager, error) {
 	return gF.GetManager(ty)
 }
 
-func LoadImage(imgName string) (img *types.Image, err error) {
+func LoadImage(ctx context.Context, imgName string) (img *types.Image, err error) {
 	mgr, err := GetManager()
 	if err != nil {
 		return nil, err
 	}
-	return mgr.LoadImage(imgName)
+	return mgr.LoadImage(ctx, imgName)
 }
 
 func ListLocalImages(ctx context.Context, user string) ([]*types.Image, error) {
