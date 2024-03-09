@@ -14,7 +14,6 @@ import (
 	"github.com/docker/docker/api/types"
 	engineapi "github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/archive"
-	"github.com/yuyang0/vmimage"
 	pkgtypes "github.com/yuyang0/vmimage/types"
 	"github.com/yuyang0/vmimage/utils"
 )
@@ -41,12 +40,12 @@ func NewManager(config *pkgtypes.Config) (m *Manager, err error) {
 	return m, nil
 }
 
-func (m *Manager) ListLocalImages(ctx context.Context, user string) ([]vmimage.Image, error) {
+func (m *Manager) ListLocalImages(ctx context.Context, user string) ([]*pkgtypes.Image, error) {
 	images, err := m.cli.ImageList(ctx, types.ImageListOptions{})
 	if err != nil {
 		return nil, err
 	}
-	var ans []vmimage.Image
+	var ans []*pkgtypes.Image
 	prefix := path.Join(m.cfg.Prefix, user)
 	for _, dockerImg := range images {
 		for _, repoTag := range dockerImg.RepoTags {
@@ -54,7 +53,7 @@ func (m *Manager) ListLocalImages(ctx context.Context, user string) ([]vmimage.I
 				fullname := strings.TrimPrefix(repoTag, prefix)
 				fullname = strings.TrimPrefix(fullname, "/")
 				fullname = strings.TrimPrefix(fullname, "library/")
-				img, _ := m.NewImage(fullname)
+				img, _ := pkgtypes.NewImage(fullname)
 				ans = append(ans, img)
 			}
 		}
@@ -62,48 +61,19 @@ func (m *Manager) ListLocalImages(ctx context.Context, user string) ([]vmimage.I
 	return ans, nil
 }
 
-func (m *Manager) NewImage(fullname string) (vmimage.Image, error) {
-	user, name, tag, err := utils.NormalizeImageName(fullname)
-	if err != nil {
+func (m *Manager) LoadImage(imgName string) (img *pkgtypes.Image, err error) {
+	if img, err = pkgtypes.NewImage(imgName); err != nil {
 		return nil, err
 	}
-	return &Image{
-		user: user,
-		name: name,
-		tag:  tag,
-
-		cfg: m.cfg,
-		cli: m.cli,
-	}, nil
-}
-
-func (m *Manager) LoadImage(imgName string) (img vmimage.Image, err error) {
-	if img, err = m.NewImage(imgName); err != nil {
-		return nil, err
-	}
-	rc, err := img.Pull(context.TODO())
+	rc, err := m.Pull(context.TODO(), img)
 	if err != nil {
 		return nil, err
 	}
 	utils.EnsureReaderClosed(rc)
-	if err := img.LoadMetadata(context.TODO()); err != nil {
+	if err := m.loadMetadata(context.TODO(), img); err != nil {
 		return nil, err
 	}
 	return img, nil
-}
-
-type Image struct {
-	user        string
-	name        string
-	tag         string
-	distro      string
-	digest      string
-	actualSize  int64
-	virtualSize int64
-	localPath   string
-
-	cfg *pkgtypes.Config
-	cli *engineapi.Client
 }
 
 // Prepare prepares the image for use by creating a Dockerfile and building a Docker image.
@@ -114,8 +84,8 @@ type Image struct {
 // Returns:
 //   - io.ReadCloser: a ReadCloser to read the prepared image.
 //   - error: an error if any occurred during the preparation process.
-func (img *Image) Prepare(fname string) (io.ReadCloser, error) {
-	cli := img.cli
+func (mgr *Manager) Prepare(fname string, img *pkgtypes.Image) (io.ReadCloser, error) {
+	cli := mgr.cli
 	baseDir := filepath.Dir(fname)
 	baseName := filepath.Base(fname)
 	digest := ""
@@ -157,7 +127,7 @@ func (img *Image) Prepare(fname string) (io.ReadCloser, error) {
 	buildOptions := types.ImageBuildOptions{
 		Context:    buildContext,
 		Dockerfile: "Dockerfile.yavirt", // Use the default Dockerfile name
-		Tags:       []string{img.dockerImageName()},
+		Tags:       []string{mgr.dockerImageName(img)},
 	}
 
 	resp, err := cli.ImageBuild(context.Background(), buildContext, buildOptions)
@@ -167,79 +137,47 @@ func (img *Image) Prepare(fname string) (io.ReadCloser, error) {
 	return resp.Body, nil
 }
 
-func (img *Image) Pull(ctx context.Context) (io.ReadCloser, error) {
-	cli, cfg := img.cli, img.cfg
-	return cli.ImagePull(ctx, img.dockerImageName(), types.ImagePullOptions{
+func (mgr *Manager) Pull(ctx context.Context, img *pkgtypes.Image) (io.ReadCloser, error) {
+	cli, cfg := mgr.cli, mgr.cfg
+	return cli.ImagePull(ctx, mgr.dockerImageName(img), types.ImagePullOptions{
 		RegistryAuth: cfg.Docker.Auth,
 	})
 }
 
-func (img *Image) Push(ctx context.Context, force bool) (io.ReadCloser, error) {
-	cli, cfg := img.cli, img.cfg
-	return cli.ImagePush(ctx, img.dockerImageName(), types.ImagePushOptions{
+func (mgr *Manager) Push(ctx context.Context, img *pkgtypes.Image, force bool) (io.ReadCloser, error) {
+	cli, cfg := mgr.cli, mgr.cfg
+	return cli.ImagePush(ctx, mgr.dockerImageName(img), types.ImagePushOptions{
 		RegistryAuth: cfg.Docker.Auth,
 		All:          force,
 	})
 }
 
-func (img *Image) LoadMetadata(ctx context.Context) (err error) {
-	cli := img.cli
-	resp, _, err := cli.ImageInspectWithRaw(ctx, img.dockerImageName())
-	if err != nil {
-		return err
-	}
-	upperDir := resp.GraphDriver.Data["UpperDir"]
-	img.localPath = filepath.Join(upperDir, destImgName)
-	img.actualSize, img.virtualSize, err = utils.ImageSize(ctx, img.localPath)
-
-	img.digest = resp.Config.Labels["SHA256"]
-	return err
-}
-
-func (img *Image) RemoveLocal(ctx context.Context) error {
-	cli := img.cli
-	_, err := cli.ImageRemove(ctx, img.dockerImageName(), types.ImageRemoveOptions{
+func (mgr *Manager) RemoveLocal(ctx context.Context, img *pkgtypes.Image) error {
+	cli := mgr.cli
+	_, err := cli.ImageRemove(ctx, mgr.dockerImageName(img), types.ImageRemoveOptions{
 		Force:         true, // Remove even if the image is in use
 		PruneChildren: true, // Prune dependent child images
 	})
 	return err
 }
 
-func (img *Image) Fullname() string {
-	if img.user == "" {
-		return fmt.Sprintf("%s:%s", img.name, img.tag)
-	} else { //nolint
-		return fmt.Sprintf("%s/%s:%s", img.user, img.name, img.tag)
+func (mgr *Manager) loadMetadata(ctx context.Context, img *pkgtypes.Image) (err error) {
+	cli := mgr.cli
+	resp, _, err := cli.ImageInspectWithRaw(ctx, mgr.dockerImageName(img))
+	if err != nil {
+		return err
 	}
+	upperDir := resp.GraphDriver.Data["UpperDir"]
+	img.LocalPath = filepath.Join(upperDir, destImgName)
+	img.ActualSize, img.VirtualSize, err = utils.ImageSize(ctx, img.LocalPath)
+
+	img.Digest = resp.Config.Labels["SHA256"]
+	return err
 }
 
-func (img *Image) RBDName() string {
-	name := strings.ReplaceAll(img.Fullname(), "/", ".")
-	return strings.ReplaceAll(name, ":", "-")
-}
-
-func (img *Image) Filepath() string {
-	return img.localPath
-}
-
-func (img *Image) VirtualSize() int64 {
-	return img.virtualSize
-}
-
-func (img *Image) Distro() string {
-	return img.distro
-}
-
-func (img *Image) Digest() string {
-	if img.digest == "" {
-		img.digest, _ = utils.CalcDigestOfFile(img.localPath)
-	}
-	return img.digest
-}
-
-func (img *Image) dockerImageName() string {
-	cfg := img.cfg
-	if img.user == "" {
+func (m *Manager) dockerImageName(img *pkgtypes.Image) string {
+	cfg := m.cfg
+	if img.User == "" {
 		return path.Join(cfg.Prefix, "library", img.Fullname())
 	} else { //nolint
 		return path.Join(cfg.Prefix, img.Fullname())

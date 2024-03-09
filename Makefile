@@ -1,2 +1,2 @@
 mock: 
-	mockery --dir . --output mocks --all
+	mockery --dir . --output mocks --name Manager

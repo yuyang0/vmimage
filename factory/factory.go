@@ -78,7 +78,7 @@ func GetManager(tys ...string) (vmimage.Manager, error) {
 	return gF.GetManager(ty)
 }
 
-func LoadImage(imgName string) (img vmimage.Image, err error) {
+func LoadImage(imgName string) (img *types.Image, err error) {
 	mgr, err := GetManager()
 	if err != nil {
 		return nil, err
@@ -86,7 +86,7 @@ func LoadImage(imgName string) (img vmimage.Image, err error) {
 	return mgr.LoadImage(imgName)
 }
 
-func ListLocalImages(ctx context.Context, user string) ([]vmimage.Image, error) {
+func ListLocalImages(ctx context.Context, user string) ([]*types.Image, error) {
 	mgr, err := GetManager()
 	if err != nil {
 		return nil, err
@@ -94,12 +94,8 @@ func ListLocalImages(ctx context.Context, user string) ([]vmimage.Image, error) 
 	return mgr.ListLocalImages(ctx, user)
 }
 
-func NewImage(imgName string) (vmimage.Image, error) {
-	mgr, err := GetManager()
-	if err != nil {
-		return nil, err
-	}
-	return mgr.NewImage(imgName)
+func NewImage(imgName string) (*types.Image, error) {
+	return types.NewImage(imgName)
 }
 
 func NewImageName(user, name string) string {
@@ -108,8 +104,4 @@ func NewImageName(user, name string) string {
 		imgName = name
 	}
 	return imgName
-}
-
-func NewMockImage() *mocks.Image {
-	return &mocks.Image{}
 }
