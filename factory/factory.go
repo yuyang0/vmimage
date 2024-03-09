@@ -36,12 +36,13 @@ func NewFactory(cfg *types.Config) (f *Factory, err error) {
 		cfg:    cfg,
 		mgrMap: haxmap.New[string, vmimage.Manager](),
 	}
-	f.mgrMap.Set(mockType, &mocks.Manager{})
 
 	var mgr vmimage.Manager
 	switch cfg.Type {
 	case dockerType:
 		mgr, err = docker.NewManager(cfg)
+	case mockType:
+		mgr = &mocks.Manager{}
 	default:
 		err = fmt.Errorf("invalid type: %s", cfg.Type)
 	}
