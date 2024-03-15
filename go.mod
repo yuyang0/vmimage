@@ -4,10 +4,10 @@ go 1.21.0
 
 require (
 	github.com/alphadose/haxmap v1.3.1
-	github.com/docker/docker v24.0.7+incompatible
+	github.com/docker/docker v23.0.4+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.4
-	jihulab.com/wanjie/iaas/citadel v0.0.30-0.20240315132223-6a3cd2094c5f
+	jihulab.com/wanjie/iaas/citadel v0.0.30-0.20240315135848-62f8000fb104
 )
 
 require (
