@@ -106,9 +106,9 @@ func (_m *Manager) Prepare(fname string, img *types.Image) (io.ReadCloser, error
 	return r0, r1
 }
 
-// Pull provides a mock function with given fields: ctx, img
-func (_m *Manager) Pull(ctx context.Context, img *types.Image) (io.ReadCloser, error) {
-	ret := _m.Called(ctx, img)
+// Pull provides a mock function with given fields: ctx, img, pullPolicy
+func (_m *Manager) Pull(ctx context.Context, img *types.Image, pullPolicy types.PullPolicy) (io.ReadCloser, error) {
+	ret := _m.Called(ctx, img, pullPolicy)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Pull")
@@ -116,19 +116,19 @@ func (_m *Manager) Pull(ctx context.Context, img *types.Image) (io.ReadCloser, e
 
 	var r0 io.ReadCloser
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *types.Image) (io.ReadCloser, error)); ok {
-		return rf(ctx, img)
+	if rf, ok := ret.Get(0).(func(context.Context, *types.Image, types.PullPolicy) (io.ReadCloser, error)); ok {
+		return rf(ctx, img, pullPolicy)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *types.Image) io.ReadCloser); ok {
-		r0 = rf(ctx, img)
+	if rf, ok := ret.Get(0).(func(context.Context, *types.Image, types.PullPolicy) io.ReadCloser); ok {
+		r0 = rf(ctx, img, pullPolicy)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(io.ReadCloser)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *types.Image) error); ok {
-		r1 = rf(ctx, img)
+	if rf, ok := ret.Get(1).(func(context.Context, *types.Image, types.PullPolicy) error); ok {
+		r1 = rf(ctx, img, pullPolicy)
 	} else {
 		r1 = ret.Error(1)
 	}

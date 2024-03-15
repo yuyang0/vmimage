@@ -96,12 +96,12 @@ func ListLocalImages(ctx context.Context, user string) ([]*types.Image, error) {
 	return mgr.ListLocalImages(ctx, user)
 }
 
-func Pull(ctx context.Context, img *types.Image) (io.ReadCloser, error) {
+func Pull(ctx context.Context, img *types.Image, policy types.PullPolicy) (io.ReadCloser, error) {
 	mgr, err := GetManager()
 	if err != nil {
 		return nil, err
 	}
-	return mgr.Pull(ctx, img)
+	return mgr.Pull(ctx, img, policy)
 }
 
 func Push(ctx context.Context, img *types.Image, force bool) (io.ReadCloser, error) {

@@ -9,12 +9,23 @@ import (
 	"github.com/yuyang0/vmimage/utils"
 )
 
+type PullPolicy string
+
+const (
+	PullPolicyAlways       = "Always"
+	PullPolicyIfNotPresent = "IfNotPresent"
+	PullPolicyNever        = "Never"
+)
+
 type Image struct {
-	User        string
-	Name        string
-	Tag         string
-	Distro      string
-	Digest      string
+	Username string `json:"username"`
+	Name     string `json:"name"`
+	Tag      string `json:"tag" description:"image tag, default:latest"`
+	Private  bool   `json:"private"`
+	Size     int64  `json:"size"`
+	Digest   string `json:"digest" description:"image digest"`
+	Snapshot string `json:"snapshot" description:"image rbd snapshot"`
+
 	ActualSize  int64
 	VirtualSize int64
 	LocalPath   string
@@ -26,17 +37,17 @@ func NewImage(fullname string) (*Image, error) {
 		return nil, err
 	}
 	return &Image{
-		User: user,
-		Name: name,
-		Tag:  tag,
+		Username: user,
+		Name:     name,
+		Tag:      tag,
 	}, nil
 }
 
 func (img *Image) Fullname() string {
-	if img.User == "" {
+	if img.Username == "" {
 		return fmt.Sprintf("%s:%s", img.Name, img.Tag)
 	} else { //nolint
-		return fmt.Sprintf("%s/%s:%s", img.User, img.Name, img.Tag)
+		return fmt.Sprintf("%s/%s:%s", img.Username, img.Name, img.Tag)
 	}
 }
 

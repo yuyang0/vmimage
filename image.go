@@ -12,7 +12,7 @@ type Manager interface {
 	LoadImage(ctx context.Context, imgName string) (*types.Image, error) // create image object and pull the image to local
 
 	Prepare(fname string, img *types.Image) (io.ReadCloser, error)
-	Pull(ctx context.Context, img *types.Image) (io.ReadCloser, error)
+	Pull(ctx context.Context, img *types.Image, pullPolicy types.PullPolicy) (io.ReadCloser, error)
 	Push(ctx context.Context, img *types.Image, force bool) (io.ReadCloser, error)
 	RemoveLocal(ctx context.Context, img *types.Image) error
 }

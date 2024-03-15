@@ -65,7 +65,7 @@ func (m *Manager) LoadImage(ctx context.Context, imgName string) (img *pkgtypes.
 	if img, err = pkgtypes.NewImage(imgName); err != nil {
 		return nil, err
 	}
-	rc, err := m.Pull(ctx, img)
+	rc, err := m.Pull(ctx, img, pkgtypes.PullPolicyAlways)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +137,7 @@ func (mgr *Manager) Prepare(fname string, img *pkgtypes.Image) (io.ReadCloser, e
 	return resp.Body, nil
 }
 
-func (mgr *Manager) Pull(ctx context.Context, img *pkgtypes.Image) (io.ReadCloser, error) {
+func (mgr *Manager) Pull(ctx context.Context, img *pkgtypes.Image, _ pkgtypes.PullPolicy) (io.ReadCloser, error) {
 	cli, cfg := mgr.cli, mgr.cfg
 	return cli.ImagePull(ctx, mgr.dockerImageName(img), types.ImagePullOptions{
 		RegistryAuth: cfg.Docker.Auth,
@@ -177,7 +177,7 @@ func (mgr *Manager) loadMetadata(ctx context.Context, img *pkgtypes.Image) (err 
 
 func (m *Manager) dockerImageName(img *pkgtypes.Image) string {
 	cfg := m.cfg
-	if img.User == "" {
+	if img.Username == "" {
 		return path.Join(cfg.Prefix, "library", img.Fullname())
 	} else { //nolint
 		return path.Join(cfg.Prefix, img.Fullname())
