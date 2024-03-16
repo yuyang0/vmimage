@@ -10,10 +10,12 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/docker/docker/api/types"
 	engineapi "github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/archive"
+	"github.com/pkg/errors"
 	pkgtypes "github.com/yuyang0/vmimage/types"
 	"github.com/yuyang0/vmimage/utils"
 )
@@ -161,6 +163,15 @@ func (mgr *Manager) RemoveLocal(ctx context.Context, img *pkgtypes.Image) error 
 	return err
 }
 
+func (mgr *Manager) CheckHealth(ctx context.Context) error {
+	parts := strings.SplitN(mgr.cfg.Docker.Prefix, "/", 2)
+	if len(parts) >= 2 && strings.Contains(parts[0], ".") {
+		if err := utils.IPReachable(parts[0], time.Second); err != nil {
+			return errors.Wrapf(err, "failed to ping image hub %s", parts[0])
+		}
+	}
+	return nil
+}
 func (mgr *Manager) loadMetadata(ctx context.Context, img *pkgtypes.Image) (err error) {
 	cli := mgr.cli
 	resp, _, err := cli.ImageInspectWithRaw(ctx, mgr.dockerImageName(img))

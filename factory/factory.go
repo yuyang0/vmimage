@@ -144,3 +144,11 @@ func GetMockManager() *mocks.Manager {
 	mgr, _ := GetManager(mockType)
 	return mgr.(*mocks.Manager)
 }
+
+func CheckHealth(ctx context.Context) error {
+	mgr, err := GetManager()
+	if err != nil {
+		return err
+	}
+	return mgr.CheckHealth(ctx)
+}

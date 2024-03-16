@@ -15,4 +15,5 @@ type Manager interface {
 	Pull(ctx context.Context, img *types.Image, pullPolicy types.PullPolicy) (io.ReadCloser, error)
 	Push(ctx context.Context, img *types.Image, force bool) (io.ReadCloser, error)
 	RemoveLocal(ctx context.Context, img *types.Image) error
+	CheckHealth(ctx context.Context) error
 }

@@ -6,6 +6,7 @@ require (
 	github.com/alphadose/haxmap v1.3.1
 	github.com/docker/docker v23.0.4+incompatible
 	github.com/pkg/errors v0.9.1
+	github.com/prometheus-community/pro-bing v0.4.0
 	github.com/stretchr/testify v1.8.4
 	jihulab.com/wanjie/iaas/citadel v0.0.30-0.20240316030205-8a62510b61de
 )
@@ -25,6 +26,7 @@ require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/getsentry/sentry-go v0.20.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/klauspost/compress v1.17.2 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
@@ -45,6 +47,7 @@ require (
 	golang.org/x/exp v0.0.0-20230626212559-97b1e661b5df // indirect
 	golang.org/x/mod v0.14.0 // indirect
 	golang.org/x/net v0.21.0 // indirect
+	golang.org/x/sync v0.6.0 // indirect
 	golang.org/x/sys v0.17.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/tools v0.17.0 // indirect

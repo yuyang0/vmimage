@@ -3,14 +3,19 @@ package citadel
 import (
 	"context"
 	"io"
+	"net/url"
+	"time"
 
+	"github.com/pkg/errors"
 	"github.com/yuyang0/vmimage/types"
+	"github.com/yuyang0/vmimage/utils"
 	imageAPI "jihulab.com/wanjie/iaas/citadel/client/image"
 	apitypes "jihulab.com/wanjie/iaas/citadel/client/types"
 )
 
 type Manager struct {
 	api imageAPI.API
+	cfg *types.Config
 }
 
 func NewManager(cfg *types.Config) (*Manager, error) {
@@ -24,6 +29,7 @@ func NewManager(cfg *types.Config) (*Manager, error) {
 	}
 	return &Manager{
 		api: api,
+		cfg: cfg,
 	}, nil
 }
 
@@ -101,6 +107,20 @@ func (mgr *Manager) Push(ctx context.Context, img *types.Image, force bool) (io.
 
 func (mgr *Manager) RemoveLocal(ctx context.Context, img *types.Image) error {
 	return mgr.api.RemoveLocalImage(ctx, toAPIImage(img))
+}
+
+func (mgr *Manager) CheckHealth(ctx context.Context) error {
+	u, err := url.Parse(mgr.cfg.Citadel.Addr)
+	if err != nil {
+		return err
+	}
+	hn := u.Hostname()
+	if len(hn) > 0 {
+		if err := utils.IPReachable(hn, time.Second); err != nil {
+			return errors.Wrapf(err, "failed to ping image hub %s", hn)
+		}
+	}
+	return nil
 }
 
 func toAPIImage(img *types.Image) *apitypes.Image {

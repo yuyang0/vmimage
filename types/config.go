@@ -3,7 +3,9 @@ package types
 import (
 	"encoding/base64"
 	"encoding/json"
-	"errors"
+	"net/url"
+
+	"github.com/pkg/errors"
 )
 
 type DockerConfig struct {
@@ -45,6 +47,13 @@ func (cfg *Config) CheckAndRefine() error {
 		}
 		if cfg.Citadel.Addr == "" {
 			return errors.New("ImageHub's address shouldn't be empty")
+		}
+		u, err := url.Parse(cfg.Citadel.Addr)
+		if err != nil {
+			return errors.Wrapf(err, "failed to parse %s", cfg.Citadel.Addr)
+		}
+		if u.Scheme == "" || u.Host == "" {
+			return errors.New("invalid image hub addr")
 		}
 	case "mock":
 		return nil
