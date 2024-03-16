@@ -15,8 +15,8 @@ type Manager struct {
 
 func NewManager(cfg *types.Config) (*Manager, error) {
 	cred := &apitypes.Credential{
-		Username: cfg.Username,
-		Password: cfg.Password,
+		Username: cfg.Citadel.Username,
+		Password: cfg.Citadel.Password,
 	}
 	api, err := imageAPI.NewAPI(cfg.Citadel.Addr, cfg.Citadel.BaseDir, cred)
 	if err != nil {

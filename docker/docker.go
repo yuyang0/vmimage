@@ -46,7 +46,7 @@ func (m *Manager) ListLocalImages(ctx context.Context, user string) ([]*pkgtypes
 		return nil, err
 	}
 	var ans []*pkgtypes.Image
-	prefix := path.Join(m.cfg.Prefix, user)
+	prefix := path.Join(m.cfg.Docker.Prefix, user)
 	for _, dockerImg := range images {
 		for _, repoTag := range dockerImg.RepoTags {
 			if strings.HasPrefix(repoTag, prefix) {
@@ -178,9 +178,9 @@ func (mgr *Manager) loadMetadata(ctx context.Context, img *pkgtypes.Image) (err 
 func (m *Manager) dockerImageName(img *pkgtypes.Image) string {
 	cfg := m.cfg
 	if img.Username == "" {
-		return path.Join(cfg.Prefix, "library", img.Fullname())
+		return path.Join(cfg.Docker.Prefix, "library", img.Fullname())
 	} else { //nolint
-		return path.Join(cfg.Prefix, img.Fullname())
+		return path.Join(cfg.Docker.Prefix, img.Fullname())
 	}
 }
 
