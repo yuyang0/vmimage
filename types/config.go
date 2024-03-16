@@ -10,7 +10,7 @@ import (
 
 type DockerConfig struct {
 	Endpoint string `toml:"endpoint" default:"unix:///var/run/docker.sock"`
-	Auth     string `toml:"-"` // in base64
+	Auth     string `toml:"auth"` // in base64
 	Prefix   string `toml:"prefix"`
 	Username string `toml:"username"`
 	Password string `toml:"password"`
