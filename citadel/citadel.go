@@ -56,8 +56,15 @@ func (mgr *Manager) LoadImage(ctx context.Context, imgName string) (*types.Image
 		Username: apiImage.Username,
 		Name:     apiImage.Name,
 		Tag:      apiImage.Tag,
+		Private:  apiImage.Private,
 		Size:     apiImage.Size,
 		Digest:   apiImage.Digest,
+		OS: types.OSInfo{
+			Type:    apiImage.OS.Type,
+			Distrib: apiImage.OS.Distrib,
+			Version: apiImage.OS.Version,
+			Arch:    apiImage.OS.Arch,
+		},
 		Snapshot: apiImage.Snapshot,
 	}
 	return img, nil
@@ -76,6 +83,12 @@ func (mgr *Manager) Pull(ctx context.Context, img *types.Image, policy types.Pul
 	newImg, err := mgr.api.Pull(ctx, img.Fullname(), imageAPI.PullPolicy(policy))
 	img.Tag = newImg.Tag
 	img.Snapshot = newImg.Snapshot
+	img.OS = types.OSInfo{
+		Type:    newImg.OS.Type,
+		Distrib: newImg.OS.Distrib,
+		Version: newImg.OS.Version,
+		Arch:    newImg.OS.Arch,
+	}
 
 	return &nullReadCloser{}, err
 }
@@ -97,6 +110,12 @@ func toAPIImage(img *types.Image) *apitypes.Image {
 	apiImage.Tag = img.Tag
 	apiImage.Size = img.Size
 	apiImage.Digest = img.Digest
+	apiImage.OS = apitypes.OSInfo{
+		Type:    img.OS.Type,
+		Distrib: img.OS.Distrib,
+		Version: img.OS.Version,
+		Arch:    img.OS.Arch,
+	}
 	return apiImage
 }
 

@@ -7,7 +7,7 @@ require (
 	github.com/docker/docker v23.0.4+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.4
-	jihulab.com/wanjie/iaas/citadel v0.0.30-0.20240315135848-62f8000fb104
+	jihulab.com/wanjie/iaas/citadel v0.0.30-0.20240316030205-8a62510b61de
 )
 
 require (

@@ -17,11 +17,19 @@ const (
 	PullPolicyNever        = "Never"
 )
 
+type OSInfo struct {
+	Type    string `json:"type" default:"linux"`
+	Distrib string `json:"distrib" default:"ubuntu"`
+	Version string `json:"version"`
+	Arch    string `json:"arch" default:"amd64"`
+}
+
 type Image struct {
 	Username string `json:"username"`
 	Name     string `json:"name"`
 	Tag      string `json:"tag" description:"image tag, default:latest"`
 	Private  bool   `json:"private"`
+	OS       OSInfo `json:"os" description:"operating system info"`
 	Size     int64  `json:"size"`
 	Digest   string `json:"digest" description:"image digest"`
 	Snapshot string `json:"snapshot" description:"image rbd snapshot"`
