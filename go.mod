@@ -8,7 +8,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus-community/pro-bing v0.4.0
 	github.com/stretchr/testify v1.8.4
-	jihulab.com/wanjie/iaas/citadel v0.0.30-0.20240316030205-8a62510b61de
+	jihulab.com/wanjie/iaas/citadel v0.0.30-0.20240317071156-fb85089321d3
 )
 
 require (

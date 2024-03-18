@@ -151,5 +151,5 @@ gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=
 gopkg.in/yaml.v3 v3.0.1/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
 gotest.tools/v3 v3.4.0 h1:ZazjZUfuVeZGLAmlKKuyv3IKP5orXcwtOwDQH6YVr6o=
 gotest.tools/v3 v3.4.0/go.mod h1:CtbdzLSsqVhDgMtKsx03ird5YTGB3ar27v0u/yKBW5g=
-jihulab.com/wanjie/iaas/citadel v0.0.30-0.20240316030205-8a62510b61de h1:3yAKXVzWJlLm/YVEolQzg9dZTLXbC/5QAcqYUJSXgc8=
-jihulab.com/wanjie/iaas/citadel v0.0.30-0.20240316030205-8a62510b61de/go.mod h1:rut0vA0vcz0beHFbCHjz3WTf+N0OVnWgg/FyxpPq9ow=
+jihulab.com/wanjie/iaas/citadel v0.0.30-0.20240317071156-fb85089321d3 h1:JoPrgz2FahtOdc5utJvs4yALuVaCK6aTKgSgkwPFSLM=
+jihulab.com/wanjie/iaas/citadel v0.0.30-0.20240317071156-fb85089321d3/go.mod h1:rut0vA0vcz0beHFbCHjz3WTf+N0OVnWgg/FyxpPq9ow=
