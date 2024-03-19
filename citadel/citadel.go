@@ -3,12 +3,11 @@ package citadel
 import (
 	"context"
 	"io"
+	"net/http"
 	"net/url"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/yuyang0/vmimage/types"
-	"github.com/yuyang0/vmimage/utils"
 	imageAPI "jihulab.com/wanjie/iaas/citadel/client/image"
 	apitypes "jihulab.com/wanjie/iaas/citadel/client/types"
 )
@@ -110,15 +109,16 @@ func (mgr *Manager) RemoveLocal(ctx context.Context, img *types.Image) error {
 }
 
 func (mgr *Manager) CheckHealth(ctx context.Context) error {
-	u, err := url.Parse(mgr.cfg.Citadel.Addr)
+	healthzURL, err := url.JoinPath(mgr.cfg.Citadel.Addr, "healthz")
 	if err != nil {
 		return err
 	}
-	hn := u.Hostname()
-	if len(hn) > 0 {
-		if err := utils.IPReachable(hn, time.Second); err != nil {
-			return errors.Wrapf(err, "failed to ping image hub %s", hn)
-		}
+	resp, err := http.Get(healthzURL)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return errors.New(resp.Status)
 	}
 	return nil
 }
