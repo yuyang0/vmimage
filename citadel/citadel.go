@@ -86,6 +86,9 @@ func (mgr *Manager) Prepare(fname string, img *types.Image) (io.ReadCloser, erro
 
 func (mgr *Manager) Pull(ctx context.Context, img *types.Image, policy types.PullPolicy) (io.ReadCloser, error) {
 	newImg, err := mgr.api.Pull(ctx, img.Fullname(), imageAPI.PullPolicy(policy))
+	if err != nil {
+		return nil, err
+	}
 	img.Tag = newImg.Tag
 	img.Snapshot = newImg.Snapshot
 	img.OS = types.OSInfo{
@@ -95,7 +98,7 @@ func (mgr *Manager) Pull(ctx context.Context, img *types.Image, policy types.Pul
 		Arch:    newImg.OS.Arch,
 	}
 
-	return &nullReadCloser{}, err
+	return &nullReadCloser{}, nil
 }
 
 func (mgr *Manager) Push(ctx context.Context, img *types.Image, force bool) (io.ReadCloser, error) {
