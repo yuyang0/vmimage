@@ -7,16 +7,16 @@ import (
 
 	"github.com/alphadose/haxmap"
 	"github.com/yuyang0/vmimage"
-	"github.com/yuyang0/vmimage/citadel"
 	"github.com/yuyang0/vmimage/docker"
 	"github.com/yuyang0/vmimage/mocks"
 	"github.com/yuyang0/vmimage/types"
+	"github.com/yuyang0/vmimage/vmihub"
 )
 
 const (
-	dockerType  = "docker"
-	citadelType = "citadel"
-	mockType    = "mock"
+	dockerType = "docker"
+	vmihubType = "vmihub"
+	mockType   = "mock"
 )
 
 var (
@@ -43,8 +43,8 @@ func NewFactory(cfg *types.Config) (f *Factory, err error) {
 	switch cfg.Type {
 	case dockerType:
 		mgr, err = docker.NewManager(cfg)
-	case citadelType:
-		mgr, err = citadel.NewManager(cfg)
+	case vmihubType:
+		mgr, err = vmihub.NewManager(cfg)
 	case mockType:
 		mgr = &mocks.Manager{}
 	default:

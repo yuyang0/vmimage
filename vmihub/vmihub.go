@@ -1,4 +1,4 @@
-package citadel
+package vmihub
 
 import (
 	"context"
@@ -19,10 +19,10 @@ type Manager struct {
 
 func NewManager(cfg *types.Config) (*Manager, error) {
 	cred := &apitypes.Credential{
-		Username: cfg.Citadel.Username,
-		Password: cfg.Citadel.Password,
+		Username: cfg.VMIHub.Username,
+		Password: cfg.VMIHub.Password,
 	}
-	api, err := imageAPI.NewAPI(cfg.Citadel.Addr, cfg.Citadel.BaseDir, cred)
+	api, err := imageAPI.NewAPI(cfg.VMIHub.Addr, cfg.VMIHub.BaseDir, cred)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +112,7 @@ func (mgr *Manager) RemoveLocal(ctx context.Context, img *types.Image) error {
 }
 
 func (mgr *Manager) CheckHealth(ctx context.Context) error {
-	healthzURL, err := url.JoinPath(mgr.cfg.Citadel.Addr, "healthz")
+	healthzURL, err := url.JoinPath(mgr.cfg.VMIHub.Addr, "healthz")
 	if err != nil {
 		return err
 	}

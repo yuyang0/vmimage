@@ -16,7 +16,7 @@ type DockerConfig struct {
 	Password string `toml:"password"`
 }
 
-type CitadelConfig struct {
+type VMIHubConfig struct {
 	BaseDir  string `toml:"base_dir"`
 	Addr     string `toml:"addr"`
 	Username string `toml:"username"`
@@ -24,9 +24,9 @@ type CitadelConfig struct {
 }
 
 type Config struct {
-	Type    string        `toml:"type" default:"docker"`
-	Docker  DockerConfig  `toml:"docker"`
-	Citadel CitadelConfig `toml:"citadel"`
+	Type   string       `toml:"type" default:"docker"`
+	Docker DockerConfig `toml:"docker"`
+	VMIHub VMIHubConfig `toml:"vmihub"`
 }
 
 func (cfg *Config) CheckAndRefine() error {
@@ -41,16 +41,16 @@ func (cfg *Config) CheckAndRefine() error {
 		}
 		authBytes, _ := json.Marshal(auth)
 		cfg.Docker.Auth = base64.StdEncoding.EncodeToString(authBytes)
-	case "citadel":
-		if cfg.Citadel.Username == "" || cfg.Citadel.Password == "" {
+	case "vmihub":
+		if cfg.VMIHub.Username == "" || cfg.VMIHub.Password == "" {
 			return errors.New("ImageHub's username or password should not be empty")
 		}
-		if cfg.Citadel.Addr == "" {
+		if cfg.VMIHub.Addr == "" {
 			return errors.New("ImageHub's address shouldn't be empty")
 		}
-		u, err := url.Parse(cfg.Citadel.Addr)
+		u, err := url.Parse(cfg.VMIHub.Addr)
 		if err != nil {
-			return errors.Wrapf(err, "failed to parse %s", cfg.Citadel.Addr)
+			return errors.Wrapf(err, "failed to parse %s", cfg.VMIHub.Addr)
 		}
 		if u.Scheme == "" || u.Host == "" {
 			return errors.New("invalid image hub addr")
