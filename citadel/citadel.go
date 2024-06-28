@@ -7,9 +7,9 @@ import (
 	"net/url"
 
 	"github.com/pkg/errors"
+	imageAPI "github.com/projecteru2/vmihub/client/image"
+	apitypes "github.com/projecteru2/vmihub/client/types"
 	"github.com/yuyang0/vmimage/types"
-	imageAPI "jihulab.com/wanjie/iaas/citadel/client/image"
-	apitypes "jihulab.com/wanjie/iaas/citadel/client/types"
 )
 
 type Manager struct {
